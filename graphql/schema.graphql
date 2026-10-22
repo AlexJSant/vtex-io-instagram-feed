@@ -1,0 +1,20 @@
+type InstagramFeedItem {
+  id: ID!
+  mediaType: String!
+  coverUrl: String!
+  permalink: String!
+  publishedAt: String!
+  altText: String!
+}
+
+type InstagramFeedSnapshot {
+  items: [InstagramFeedItem!]!
+  lastSyncedAt: String
+  source: String!
+}
+
+type Query {
+  instagramFeed: InstagramFeedSnapshot!
+    @auth(scope: PUBLIC)
+    @cacheControl(scope: PUBLIC, maxAge: 300)
+}

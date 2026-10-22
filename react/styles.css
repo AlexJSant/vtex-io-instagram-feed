@@ -1,0 +1,131 @@
+.container {
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 80rem;
+  min-height: 25rem;
+  padding: 2rem 1rem;
+  position: relative;
+  width: 100%;
+}
+
+.heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 3rem;
+  padding-right: 6rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+}
+
+.carousel {
+  position: static;
+}
+
+.card {
+  aspect-ratio: 4 / 5;
+  display: block;
+  margin: 0 0.35rem;
+  overflow: hidden;
+}
+
+.card:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.skeleton .carousel {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.skeletonCard {
+  animation: instagram-feed-pulse 1.4s ease-in-out infinite;
+  aspect-ratio: 4 / 5;
+  background: #ededed;
+}
+
+.placeholder {
+  min-height: 25rem;
+}
+
+.developmentNotice {
+  color: #5d5d5d;
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@keyframes instagram-feed-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 64rem) {
+  .container {
+    min-height: 22rem;
+  }
+
+  .skeleton .carousel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .skeletonCard:nth-child(n + 3) {
+    display: none;
+  }
+
+  .placeholder {
+    min-height: 22rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .container {
+    min-height: 28rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .heading {
+    padding-right: 0;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .skeleton .carousel {
+    grid-template-columns: 87% 13%;
+  }
+
+  .skeletonCard:nth-child(2) {
+    display: block;
+  }
+
+  .placeholder {
+    min-height: 28rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonCard {
+    animation: none;
+  }
+}

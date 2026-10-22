@@ -1,0 +1,52 @@
+{
+  "vendor": "sunhouse",
+  "name": "instagram-feed",
+  "version": "0.0.1",
+  "title": "Sun House Instagram Feed",
+  "description": "Feed do Instagram da Sun House para Store Framework",
+  "builders": {
+    "react": "3.x",
+    "messages": "1.x",
+    "docs": "0.x",
+    "graphql": "2.x",
+    "styles": "2.x",
+    "store": "0.x",
+    "node": "7.x"
+  },
+  "dependencies": {
+    "vtex.css-handles": "1.x",
+    "vtex.slider-layout": "0.x"
+  },
+  "registries": [
+    "smartcheckout"
+  ],
+  "policies": [
+    {
+      "name": "vbase-read-write"
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "graph.instagram.com",
+        "path": "/v25.0/*"
+      }
+    }
+  ],
+  "settingsSchema": {
+    "title": "Sun House Instagram Feed",
+    "description": "Credencial privada usada exclusivamente pelo serviço Node para sincronizar o feed.",
+    "type": "object",
+    "properties": {
+      "instagramAccessToken": {
+        "title": "Instagram access token",
+        "description": "Token do Instagram API with Instagram Login. Não compartilhe este valor nem o inclua no código.",
+        "type": "string",
+        "format": "password"
+      }
+    },
+    "required": [
+      "instagramAccessToken"
+    ]
+  },
+  "$schema": "https://raw.githubusercontent.com/vtex/node-vtex-api/master/gen/manifest.schema"
+}

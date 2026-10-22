@@ -1,0 +1,14 @@
+query InstagramFeed {
+  instagramFeed @context(provider: "sunhouse.instagram-feed") {
+    items {
+      id
+      mediaType
+      coverUrl
+      permalink
+      publishedAt
+      altText
+    }
+    lastSyncedAt
+    source
+  }
+}
