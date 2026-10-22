@@ -1,0 +1,27 @@
+{
+  "memory": 256,
+  "ttl": 10,
+  "timeout": 30,
+  "minReplicas": 2,
+  "maxReplicas": 5,
+  "workers": 1,
+  "routes": {
+    "sync": {
+      "path": "/_v/sunhouse/instagram-feed/sync",
+      "public": false,
+      "policies": [
+        {
+          "effect": "allow",
+          "actions": ["post"],
+          "principals": [
+            "vrn:vtex.vtex-id:*:*:*:user/alex@sunhouse.com.br"
+          ]
+        }
+      ],
+      "rateLimitPerReplica": {
+        "perMinute": 4,
+        "concurrent": 1
+      }
+    }
+  }
+}
