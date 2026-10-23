@@ -59,6 +59,15 @@ The block already reserves an initial layout of four 4:5 cards. If the theme def
 
 `instagramAccessToken` and `schedulerSyncSecret` are required before a real Meta sync. Both are private App Settings. See [Credentials](#credentials).
 
+> **First use:** adding the block to the theme does not fetch Instagram
+> directly. The block only reads the latest snapshot already persisted by the
+> Node service. After installing and configuring the app in a workspace, run
+> the Google Cloud Scheduler job once (or wait for its first successful
+> scheduled execution) before validating the block on the storefront. Until
+> that first successful `POST`, no `latest.json` snapshot exists and the block
+> renders its empty state. A manual sync is available for diagnostics and
+> recovery, but it is not part of the normal startup flow.
+
 ## Modus Operandi
 
 ### Current behavior
@@ -79,6 +88,11 @@ The block already reserves an initial layout of four 4:5 cards. If the theme def
 
 The block reads the query through React Apollo, which is the integration VTEX recommends between Store Framework and the app backend. The former public route `GET /_v/{{vendor}}/instagram-feed` has been removed. The `@auth` directive controls access. `@cacheControl` controls caching and does not replace authorization.
 
+The storefront never starts a synchronization. This separation keeps the Meta
+token and upstream latency out of the rendering path. Consequently, installing
+the app or declaring the block does not create the initial snapshot: the
+Scheduler must complete at least one successful call in each target environment.
+
 The Meta client calls only `https://graph.instagram.com/v25.0`. It sends the token in the `Authorization` header and applies a timeout and a bounded retry policy. Pagination reuses only the `after` cursor and does not follow URLs returned in the response.
 
 ### Credentials
@@ -91,7 +105,9 @@ After the app has been linked manually in the development workspace:
 2. Open **Sun House Instagram Feed** and its settings page.
 3. Enter the token directly in **Meta App Instagram - Access token** (`instagramAccessToken`).
 4. Generate `schedulerSyncSecret` from at least 32 random bytes using a cryptographically secure source. Enter it in **Google Cloud Scheduler - Secret for Cron sync** (`schedulerSyncSecret`) and save. For example, run `openssl rand -base64 32` locally and transfer the result directly to the VTEX Admin and to Secret Manager.
-5. Call the manual sync route without `source=fixture`.
+5. Trigger the Google Cloud Scheduler job once and confirm a successful initial
+   snapshot before validating the storefront. Use the manual sync route without
+   `source=fixture` only for diagnostics or recovery.
 
 Do not share either value in chat, and do not add them to source code, Git, the frontend, GraphQL, URLs, fixtures, logs, or VBase. Do not reuse the Meta access token as the scheduler secret. The `password` format masks the field in the Admin UI. It does not replace administrative access control, rotation, or revocation.
 
@@ -104,12 +120,27 @@ On failure, logs omit request headers, pagination URLs, the access token, and th
 Node IO does not expose a native durable cron API with timezone support. Events declared in `service.json` are reactive consumers, not schedulers. Google Cloud Scheduler must call:
 
 ```text
-POST https://dev1--{{vendor}}.myvtex.com/_v/{{vendor}}/instagram-feed/sync-scheduler
+POST https://{{workspace}}--{{account}}.myvtex.com/_v/{{vendor}}/instagram-feed/sync-scheduler
 X-Sunhouse-Scheduler-Token: <SECRET>
 empty body
 ```
 
-`<SECRET>` is the `schedulerSyncSecret` value. The URL above is the expected form for the `{{vendor}}/dev1` workspace. This project has not verified it with an external caller. Configure the job without a Google OIDC or OAuth token. Protect the job configuration with least-privilege IAM. Restrict who can read or edit its headers, and never send the secret in the query string. This route ignores `source=fixture` and always syncs from Meta.
+`{{workspace}}` is the exact workspace targeted by the job, `{{account}}` is
+the VTEX account, `{{vendor}}` is the app vendor, and `<SECRET>` is the
+`schedulerSyncSecret` value. The Scheduler URL does not follow workspace
+changes automatically: create or update the job to point to the environment
+whose snapshot must be refreshed. Configure the job without a Google OIDC or
+OAuth token. Protect the job configuration with least-privilege IAM. Restrict
+who can read or edit its headers, and never send the secret in the query string.
+This route ignores `source=fixture` and always syncs from Meta.
+
+For the first use of the block, force one execution of this job or wait for its
+first scheduled run. Treat the bootstrap as complete only when the endpoint
+returns HTTP `200` with `ok: true` and `persistedItemCount` greater than zero.
+Before that, the expected storefront result is an empty placeholder, because
+there is no persisted snapshot to read. Responses `401` and `503` indicate,
+respectively, invalid Scheduler authentication or an unavailable
+configuration/upstream/persistence operation.
 
 Before production, publish the approved version, save the App Settings on the production installation, point the job at the production domain, measure the real duration in order to set the timeout and retry policy, and configure monitoring. The route responds only after persistence completes. The scheduler must treat any non-`2xx` response as a failure.
 
@@ -123,7 +154,7 @@ yarn test
 
 Before `vtex link`, confirm the account and the workspace explicitly, and continue only in a development workspace. Do not publish or promote this app during validation.
 
-See [TODO.md](../TODO.md) for the decisions that are mandatory before production. The technical history of the implementation is in [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md).
+See [TODO.md](TODO.md) for the decisions that are mandatory before production. The technical history of the implementation is in [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md).
 
 ### VTEX references
 
@@ -133,6 +164,8 @@ See [TODO.md](../TODO.md) for the decisions that are mandatory before production
 - [Implementing cache in GraphQL APIs for IO apps](https://developers.vtex.com/docs/guides/implementing-cache-in-graphql-apis-for-io-apps)
 - [Consuming data in Store Framework](https://developers.vtex.com/docs/guides/vtex-io-documentation-7-consuming-data)
 - [VTEX IO CLI command reference](https://developers.vtex.com/docs/guides/vtex-io-documentation-vtex-io-cli-command-reference)
+- [Workspace types](https://developers.vtex.com/docs/guides/vtex-io-documentation-workspace)
+- [Creating a Production workspace](https://developers.vtex.com/docs/guides/vtex-io-documentation-creating-a-production-workspace)
 - [FastStore/WebOps variables and secrets](https://developers.vtex.com/docs/guides/faststore/webops-managing-variables-and-secrets)
 
 ## Customization
