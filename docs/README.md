@@ -1,96 +1,156 @@
 # Sun House Instagram Feed
 
-Documentação atual: [README principal](../README.md). As seções abaixo são
-remanescentes do boilerplate e serão removidas em uma revisão de documentação.
-
-📢 Use this project, [contribute](https://github.com/{OrganizationName}/{AppName}) to it or open issues to help evolve it using [Store Discussion](https://github.com/vtex-apps/store-discussion).
-
-# APP NAME
-
 <!-- DOCS-IGNORE:start -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-0-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 <!-- DOCS-IGNORE:end -->
 
-Under the app's name, you should explain the topic, giving a **brief description** of its **functionality** in a store when installed.
+📢 Use this project, [contribute](https://github.com/AlexJSant/vtex-io-instagram-feed) to it or open issues to help evolve it using [Store Discussion](https://github.com/vtex-apps/store-discussion).
 
-Next, **add media** (either an image of a GIF) with the rendered components, so that users can better understand how the app works in practice. 
+VTEX IO / Store Framework app that reads a persisted Instagram snapshot and renders up to eight posts in the official `vtex.slider-layout` carousel.
 
-![Media Placeholder](https://user-images.githubusercontent.com/52087100/71204177-42ca4f80-227e-11ea-89e6-e92e65370c69.png)
+## Configuration
 
-## Configuration 
+This repository does not contain the store theme. To render the feed:
 
-In this section, you first must **add the primary instructions** that will allow users to use the app's blocks in their store, such as:
+1. Add the app as a theme dependency in the theme `manifest.json`.
+2. Declare the `instagram-feed` block in a theme template, or inside another block from the theme. The example below targets the second fold of the home page.
 
-1. Adding the app as a theme dependency in the `manifest.json` file;
-2. Declaring the app's main block in a given theme template or inside another block from the theme.
+```json
+{
+  "dependencies": {
+    "{{vendor}}.instagram-feed": "0.x"
+  }
+}
+```
 
-Remember to add a table with all blocks exported by the app and their descriptions. You can verify an example of it on the [Search Result documentation](https://vtex.io/docs/components/all/vtex.search-result@3.56.1/). 
+```json
+{
+  "instagram-feed#home": {
+    "props": {
+      "title": "Acompanhe a Sun House no Instagram",
+      "allowDevelopmentFixtures": false
+    }
+  }
+}
+```
 
-Next, add the **props table** containing your block's props. 
+| Block name         | Description                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `instagram-feed`   | Renders up to eight posts from the latest valid Instagram snapshot in a `vtex.slider-layout` carousel.         |
 
-If the app exports more than one block, create several tables - one for each block. For example:
+### `instagram-feed` props
 
-### `block-1` props
+| Prop name                   | Type      | Description                                                                                                                                                                                                 | Default value                              |
+| --------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `title`                     | `string`  | Heading rendered above the carousel. The same value is the section `aria-label`.                                                                                                                           | `Acompanhe a Sun House no Instagram`       |
+| `allowDevelopmentFixtures`  | `boolean` | When `true`, the block may render a snapshot whose `source` is `"fixture"`. Fixtures are blocked by default. Do not use this prop as a production fallback. Keep it `false` outside development.         | `false`                                    |
 
-| Prop name    | Type            | Description    | Default value                                                                                                                               |
-| ------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | 
-| `XXXXX`      | `XXXXXX`       | XXXXXXXX         | `XXXXXX`        |
+To preview fixtures in a development workspace, send an authenticated `POST` to:
 
+```text
+/_v/{{vendor}}/instagram-feed/sync?source=fixture
+```
 
-### `block-2` props
+Then enable `allowDevelopmentFixtures` temporarily. The `source=fixture` parameter is ignored on the `master` workspace.
 
-| Prop name    | Type            | Description    | Default value                                                                                                                               |
-| ------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | 
-| `XXXXX`      | `XXXXXX`       | XXXXXXXX         | `XXXXXX`        |
+The block already reserves an initial layout of four 4:5 cards. If the theme defers the entire block with a lazy-rendering mechanism, the theme container must reserve that same area. A skeleton that mounts only after the deferral does not reserve space on its own.
 
-Prop types are: 
+`instagramAccessToken` and `schedulerSyncSecret` are required before a real Meta sync. Both are private App Settings. See [Credentials](#credentials).
 
-- `string` 
-- `enum` 
-- `number` 
-- `boolean` 
-- `object` 
-- `array` 
+## Modus Operandi
 
-When documenting a prop whose type is `object` or `array` another prop table will be needed. You can create it following the example below:
+### Current behavior
 
-- `propName` object:
+- Store Framework block: `instagram-feed`.
+- Node `7.x` service with a cacheable public GraphQL query and a protected manual sync.
+- Media is normalized for `IMAGE`, `VIDEO`, and `CAROUSEL_ALBUM`.
+- Videos expose only `thumbnail_url`. The public contract does not include the access token, a video URL, the raw Meta response, or unnecessary child media.
+- VBase persistence is isolated between `development` and `production`.
+- Snapshots are immutable. Readers resolve the current snapshot through `latest.json`, which is updated only after a `syncStartedAt` comparison and a conditional write (`ETag` / `If-Match`). That prevents an older run from replacing a newer one.
+- Fixtures are opt-in. They are marked with `source: "fixture"` and the component blocks them by default.
 
-| Prop name    | Type            | Description    | Default value                                                                                                                               |
-| ------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | 
-| `XXXXX`      | `XXXXXX`       | XXXXXXXX         | `XXXXXX`        |
+### API
 
+- `instagramFeed`, on the app GraphQL API: reads only the latest valid snapshot. The query is defined with GraphQL builder `2.x` and is annotated with `@auth(scope: PUBLIC)` and `@cacheControl(scope: PUBLIC, maxAge: 300)`.
+- `POST /_v/{{vendor}}/instagram-feed/sync`: private route protected by a resource-based policy. The policy allows `POST` only for the administrative operator explicitly listed in it. A visit to the home page never calls this route.
+- `POST /_v/{{vendor}}/instagram-feed/sync-scheduler`: dedicated external entry point for Google Cloud Scheduler. On the Node `7.x` transport the route is public, so it does not require a VTEX identity. The middleware still requires the `X-Sunhouse-Scheduler-Token` header before it creates the repository or starts a sync. Any other method returns `405`. Missing or invalid credentials return `401`. Unavailable configuration returns `503`.
 
-Remember to also use this Configuration section to  **showcase any necessary disclaimer** related to the app and its blocks, such as the different behavior it may display during its configuration. 
+The block reads the query through React Apollo, which is the integration VTEX recommends between Store Framework and the app backend. The former public route `GET /_v/{{vendor}}/instagram-feed` has been removed. The `@auth` directive controls access. `@cacheControl` controls caching and does not replace authorization.
 
-## Modus Operandi *(not mandatory)*
+The Meta client calls only `https://graph.instagram.com/v25.0`. It sends the token in the `Authorization` header and applies a timeout and a bounded retry policy. Pagination reuses only the `after` cursor and does not follow URLs returned in the response.
 
-There are scenarios in which an app can behave differently in a store, according to how it was added to the catalog, for example. It's crucial to go through these **behavioral changes** in this section, allowing users to fully understand the **practical application** of the app in their store.
+### Credentials
 
-If you feel compelled to give further details about the app, such as it's **relationship with the VTEX admin**, don't hesitate to use this section. 
+`instagramAccessToken` and `schedulerSyncSecret` are **private App Settings**. The `settingsSchema` does not set `access` to `"public"`, so these settings are not returned by `publicSettingsForApp`. The Node service reads them with `ctx.clients.apps.getAppSettings(process.env.VTEX_APP_ID)`.
+
+After the app has been linked manually in the development workspace:
+
+1. In the same VTEX account, open **Apps > App Management** in the Admin.
+2. Open **Sun House Instagram Feed** and its settings page.
+3. Enter the token directly in **Meta App Instagram - Access token** (`instagramAccessToken`).
+4. Generate `schedulerSyncSecret` from at least 32 random bytes using a cryptographically secure source. Enter it in **Google Cloud Scheduler - Secret for Cron sync** (`schedulerSyncSecret`) and save. For example, run `openssl rand -base64 32` locally and transfer the result directly to the VTEX Admin and to Secret Manager.
+5. Call the manual sync route without `source=fixture`.
+
+Do not share either value in chat, and do not add them to source code, Git, the frontend, GraphQL, URLs, fixtures, logs, or VBase. Do not reuse the Meta access token as the scheduler secret. The `password` format masks the field in the Admin UI. It does not replace administrative access control, rotation, or revocation.
+
+Fixtures remain available without App Settings, but only through the protected route and only outside the `master` workspace.
+
+On failure, logs omit request headers, pagination URLs, the access token, and the raw Meta body.
+
+### Scheduling
+
+Node IO does not expose a native durable cron API with timezone support. Events declared in `service.json` are reactive consumers, not schedulers. Google Cloud Scheduler must call:
+
+```text
+POST https://dev1--{{vendor}}.myvtex.com/_v/{{vendor}}/instagram-feed/sync-scheduler
+X-Sunhouse-Scheduler-Token: <SECRET>
+empty body
+```
+
+`<SECRET>` is the `schedulerSyncSecret` value. The URL above is the expected form for the `{{vendor}}/dev1` workspace. This project has not verified it with an external caller. Configure the job without a Google OIDC or OAuth token. Protect the job configuration with least-privilege IAM. Restrict who can read or edit its headers, and never send the secret in the query string. This route ignores `source=fixture` and always syncs from Meta.
+
+Before production, publish the approved version, save the App Settings on the production installation, point the job at the production domain, measure the real duration in order to set the timeout and retry policy, and configure monitoring. The route responds only after persistence completes. The scheduler must treat any non-`2xx` response as a failure.
+
+### Development
+
+```sh
+yarn lint
+yarn typecheck
+yarn test
+```
+
+Before `vtex link`, confirm the account and the workspace explicitly, and continue only in a development workspace. Do not publish or promote this app during validation.
+
+See [TODO.md](../TODO.md) for the decisions that are mandatory before production. The technical history of the implementation is in [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md).
+
+### VTEX references
+
+- [Creating an interface for your app settings](https://developers.vtex.com/docs/guides/vtex-io-documentation-creating-an-interface-for-your-app-settings)
+- [GraphQL builder](https://developers.vtex.com/docs/guides/vtex-io-documentation-graphql-builder)
+- [GraphQL authorization in IO apps](https://developers.vtex.com/docs/guides/graphql-authorization-in-io-apps)
+- [Implementing cache in GraphQL APIs for IO apps](https://developers.vtex.com/docs/guides/implementing-cache-in-graphql-apis-for-io-apps)
+- [Consuming data in Store Framework](https://developers.vtex.com/docs/guides/vtex-io-documentation-7-consuming-data)
+- [VTEX IO CLI command reference](https://developers.vtex.com/docs/guides/vtex-io-documentation-vtex-io-cli-command-reference)
+- [FastStore/WebOps variables and secrets](https://developers.vtex.com/docs/guides/faststore/webops-managing-variables-and-secrets)
 
 ## Customization
 
-The first thing that should be present in this section is the sentence below, showing users the recipe pertaining to CSS customization in apps:
+In order to apply CSS customizations in this and other blocks, follow the instructions given in the recipe on [Using CSS Handles for store customization](https://vtex.io/docs/recipes/style/using-css-handles-for-store-customization).
 
-`In order to apply CSS customizations in this and other blocks, follow the instructions given in the recipe on [Using CSS Handles for store customization](https://vtex.io/docs/recipes/style/using-css-handles-for-store-customization).`
-
-Thereafter, you should add a single column table with the available CSS handles for the app, like the one below. Note that the Handles must be ordered alphabetically.
-
-| CSS Handles |
-| ----------- | 
-| `XXXXX` | 
-| `XXXXX` | 
-| `XXXXX` | 
-| `XXXXX` | 
-| `XXXXX` |
-
-
-If there are none, add the following sentence instead:
-
-`No CSS Handles are available yet for the app customization.`
+| CSS Handles          |
+| -------------------- |
+| `card`               |
+| `carousel`           |
+| `container`          |
+| `developmentNotice`  |
+| `heading`            |
+| `image`              |
+| `placeholder`        |
+| `skeleton`           |
+| `skeletonCard`       |
+| `title`              |
 
 <!-- DOCS-IGNORE:start -->
 
@@ -109,9 +169,10 @@ This project follows the [all-contributors](https://github.com/all-contributors/
 
 <!-- DOCS-IGNORE:end -->
 
----- 
+----
 
-Check out some documentation models that are already live: 
+Check out some documentation models that are already live:
+
 - [Breadcrumb](https://github.com/vtex-apps/breadcrumb)
 - [Image](https://vtex.io/docs/components/general/vtex.store-components/image)
 - [Condition Layout](https://vtex.io/docs/components/all/vtex.condition-layout@1.1.6/)

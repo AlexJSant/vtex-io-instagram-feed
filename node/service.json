@@ -22,6 +22,14 @@
         "perMinute": 4,
         "concurrent": 1
       }
+    },
+    "syncScheduler": {
+      "path": "/_v/sunhouse/instagram-feed/sync-scheduler",
+      "public": true,
+      "rateLimitPerReplica": {
+        "perMinute": 4,
+        "concurrent": 1
+      }
     }
   }
 }

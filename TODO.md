@@ -22,14 +22,16 @@
 - [ ] Confirmar o ID principal do aplicativo Meta e o vínculo final ao
       portfólio Sun House. `1209394875373919` é somente o ID específico do app
       Instagram.
-- [ ] Selecionar o agendador externo entre a infraestrutura já existente da Sun
-      House, Google Cloud Scheduler, AWS EventBridge Scheduler ou GitHub Actions.
-      Configurar execuções às 09:00 e 19:00 em `America/Sao_Paulo`, credencial
-      VTEX de integração própria (AppKey/AppToken) armazenada no cofre do
-      scheduler, principal exato na resource-based policy, headers protegidos,
-      timeout, retry progressivo, monitoramento e alerta. Nunca armazenar ou
-      transmitir o token Meta ao scheduler. A rota manual deve permanecer apenas
-      para bootstrap e recuperação.
+- [x] Implementar entrada dedicada ao Google Cloud Scheduler, sem identidade
+      VTEX, autenticada no middleware por `schedulerSyncSecret` privado e sem
+      aceitar fixtures.
+- [ ] Cadastrar um `schedulerSyncSecret` de pelo menos 32 bytes aleatórios nas
+      App Settings de cada instalação e no header protegido do job. Definir
+      acesso IAM, rotação, revogação e auditoria sem reutilizar o token Meta.
+- [ ] Após publicar, configurar o Google Cloud Scheduler para chamar a rota de
+      produção por POST, sem OIDC/OAuth, com corpo vazio. Definir agenda e fuso,
+      timeout, retry progressivo, monitoramento e alerta depois de medir a
+      duração real. A rota manual deve permanecer para bootstrap e recuperação.
 - [x] Proteger a sincronização manual com resource-based policy REST para o
       operador administrativo `alex@sunhouse.com.br`. A configuração anterior
       por `workspace-read-write` era uma role-based policy voltada a chamadas

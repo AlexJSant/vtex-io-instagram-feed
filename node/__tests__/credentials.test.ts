@@ -1,4 +1,7 @@
-import { readRuntimeConfiguration } from '../credentials'
+import {
+  readRuntimeConfiguration,
+  readSchedulerSyncSecret,
+} from '../credentials'
 
 describe('readRuntimeConfiguration', () => {
   it('reads a fictitious token from private app settings', async () => {
@@ -6,19 +9,17 @@ describe('readRuntimeConfiguration', () => {
       instagramAccessToken: ' test-token-not-a-secret ',
     })
 
-    await expect(
-      readRuntimeConfiguration(
+    expect(
+      await readRuntimeConfiguration(
         { getAppSettings },
         'sunhouse.instagram-feed@0.0.1'
       )
-    ).resolves.toEqual({
+    ).toEqual({
       mode: 'meta',
       accessToken: 'test-token-not-a-secret',
     })
 
-    expect(getAppSettings).toHaveBeenCalledWith(
-      'sunhouse.instagram-feed@0.0.1'
-    )
+    expect(getAppSettings).toHaveBeenCalledWith('sunhouse.instagram-feed@0.0.1')
   })
 
   it.each([
@@ -50,4 +51,36 @@ describe('readRuntimeConfiguration', () => {
     })
   })
 
+  describe('readSchedulerSyncSecret', () => {
+    it('reads a sufficiently long private scheduler secret', async () => {
+      const schedulerSyncSecret = 's'.repeat(32)
+
+      expect(
+        await readSchedulerSyncSecret(
+          {
+            getAppSettings: jest
+              .fn()
+              .mockResolvedValue({ schedulerSyncSecret }),
+          },
+          'sunhouse.instagram-feed@0.0.1'
+        )
+      ).toBe(schedulerSyncSecret)
+    })
+
+    it.each([
+      ['missing secret', {}],
+      ['short secret', { schedulerSyncSecret: 'too-short' }],
+      ['invalid secret type', { schedulerSyncSecret: 32 }],
+    ])('rejects %s without exposing settings', async (_name, settings) => {
+      await expect(
+        readSchedulerSyncSecret(
+          { getAppSettings: jest.fn().mockResolvedValue(settings) },
+          'sunhouse.instagram-feed@0.0.1'
+        )
+      ).rejects.toMatchObject({
+        message: 'Scheduler configuration is unavailable',
+        category: 'configuration',
+      })
+    })
+  })
 })

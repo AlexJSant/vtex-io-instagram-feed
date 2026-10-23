@@ -2,8 +2,8 @@
   "vendor": "sunhouse",
   "name": "instagram-feed",
   "version": "0.0.1",
-  "title": "Sun House Instagram Feed",
-  "description": "Feed do Instagram da Sun House para Store Framework",
+  "title": "Instagram Feed",
+  "description": "Integration with the Instagram Feed via Meta's API for VTEX IO stores.",
   "builders": {
     "react": "3.x",
     "messages": "1.x",
@@ -33,19 +33,27 @@
     }
   ],
   "settingsSchema": {
-    "title": "Sun House Instagram Feed",
-    "description": "Credencial privada usada exclusivamente pelo serviço Node para sincronizar o feed.",
+    "title": "Instagram Feed App Credentials",
+    "description": "Credenciais privadas usadas pelo serviço Node para puxar e sincronizar o Feed. *Após salvar e acessar aqui novamente os valores NÃO erão exibidos. Uma vez salvo os valores permanecerão ativos no cache do serviço.",
     "type": "object",
     "properties": {
       "instagramAccessToken": {
-        "title": "Instagram access token",
-        "description": "Token do Instagram API with Instagram Login. Não compartilhe este valor nem o inclua no código.",
+        "title": "Meta App Instagram - Access token",
+        "description": "Token disponibilizado pelo app criado no Meta para sua conta instagram. ",
         "type": "string",
         "format": "password"
+      },
+      "schedulerSyncSecret": {
+        "title": "Google Cloud Scheduler - Secret for Cron sync",
+        "description": "Segredo exclusivo do Google Cloud Scheduler. Gere pelo menos 32 bytes aleatórios com uma fonte criptograficamente segura. Pode ser gerado localmente via comandos bash ou PowerShell.",
+        "type": "string",
+        "format": "password",
+        "minLength": 32
       }
     },
     "required": [
-      "instagramAccessToken"
+      "instagramAccessToken",
+      "schedulerSyncSecret"
     ]
   },
   "$schema": "https://raw.githubusercontent.com/vtex/node-vtex-api/master/gen/manifest.schema"
