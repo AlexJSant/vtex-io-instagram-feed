@@ -34,12 +34,12 @@
   ],
   "settingsSchema": {
     "title": "Instagram Feed App Credentials",
-    "description": "Credenciais privadas usadas pelo serviço Node para puxar e sincronizar o Feed. *Após salvar e acessar aqui novamente os valores NÃO erão exibidos. Uma vez salvo os valores permanecerão ativos no cache do serviço.",
+    "description": "Credenciais privadas usadas pelo serviço Node para puxar e sincronizar o Feed. *Após salvar e acessar aqui novamente os valores NÃO serão exibidos. Uma vez salvo os valores permanecerão ativos no cache do serviço.",
     "type": "object",
     "properties": {
       "instagramAccessToken": {
         "title": "Meta App Instagram - Access token",
-        "description": "Token disponibilizado pelo app criado no Meta para sua conta instagram. ",
+        "description": "Token disponibilizado pelo app criado no Meta para sua conta Instagram. ",
         "type": "string",
         "format": "password"
       },
