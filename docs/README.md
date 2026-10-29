@@ -1,4 +1,4 @@
-# Sun House Instagram Feed
+# Instagram Feed App
 
 <!-- DOCS-IGNORE:start -->
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
@@ -29,7 +29,7 @@ This repository does not contain the store theme. To render the feed:
 {
   "instagram-feed#home": {
     "props": {
-      "title": "Acompanhe a Sun House no Instagram",
+      "title": "Acompanhe o nosso Instagram",
       "allowDevelopmentFixtures": false
     }
   }
@@ -44,7 +44,7 @@ This repository does not contain the store theme. To render the feed:
 
 | Prop name                   | Type      | Description                                                                                                                                                                                                 | Default value                              |
 | --------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `title`                     | `string`  | Heading rendered above the carousel. The same value is the section `aria-label`.                                                                                                                           | `Acompanhe a Sun House no Instagram`       |
+| `title`                     | `string`  | Heading rendered above the carousel. The same value is the section `aria-label`.                                                                                                                           | `Acompanhe o nosso Instagram`       |
 | `allowDevelopmentFixtures`  | `boolean` | When `true`, the block may render a snapshot whose `source` is `"fixture"`. Fixtures are blocked by default. Do not use this prop as a production fallback. Keep it `false` outside development.         | `false`                                    |
 
 To preview fixtures in a development workspace, send an authenticated `POST` to:
@@ -102,7 +102,7 @@ The Meta client calls only `https://graph.instagram.com/v25.0`. It sends the tok
 After the app has been linked manually in the development workspace:
 
 1. In the same VTEX account, open **Apps > App Management** in the Admin.
-2. Open **Sun House Instagram Feed** and its settings page.
+2. Open **Instagram Feed App** and its settings page.
 3. Enter the token directly in **Meta App Instagram - Access token** (`instagramAccessToken`).
 4. Generate `schedulerSyncSecret` from at least 32 random bytes using a cryptographically secure source. Enter it in **Google Cloud Scheduler - Secret for Cron sync** (`schedulerSyncSecret`) and save. For example, run `openssl rand -base64 32` locally and transfer the result directly to the VTEX Admin and to Secret Manager.
 5. Trigger the Google Cloud Scheduler job once and confirm a successful initial
