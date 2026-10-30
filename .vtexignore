@@ -4,6 +4,7 @@
 /package.json
 /README.md
 /crowdin.yml
+/docs/TODO.md
 
 # tools
 **/.eslintrc

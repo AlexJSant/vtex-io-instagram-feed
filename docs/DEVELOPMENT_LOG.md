@@ -49,6 +49,10 @@ normalizadas, persistidas e renderizadas na home em desenvolvimento.
 Nenhuma publicação, promoção de workspace ou alteração de produção foi
 executada nesta sessão.
 
+Em 29/10/2026 o `vtex.slider-layout` saiu deste fluxo. O app passou a entregar
+os slides por `vtex.list-context`, e o carrossel ficou no store-theme. O
+detalhe está na seção 12.
+
 ---
 
 ## ✅ Alterações implementadas (21/10/2026)
@@ -79,6 +83,9 @@ O componente utiliza `vtex.slider-layout` e implementa:
 para permitir que o Store Framework resolvesse o componente correto.
 
 **Status:** ✅ Renderização funcional confirmada no workspace `dev1`
+
+**Atualização em 29/10/2026:** o `SliderLayout` saiu do componente. O texto
+acima registra o comportamento daquela data. A composição atual está na seção 12.
 
 ---
 
@@ -440,17 +447,117 @@ Nenhum comando de publicação, deploy ou promoção foi executado.
 
 ---
 
+## 📅 Data: 29/10/2026
+
+### 🎯 Objetivo da sessão
+
+Desvincular o `vtex.slider-layout` deste app. O carrossel passa a ser montado
+no store-theme, no formato oficial de list context: o bloco entrega os slides
+e o tema escolhe o consumidor, em geral o `slider-layout`, ou um bloco próprio
+como Embla.
+
+Nenhuma publicação, promoção de workspace ou alteração de produção foi
+executada nesta sessão.
+
+---
+
+### 12. Carrossel movido para o store-theme
+
+**Motivo:** o tema Sun House já tem a estrutura visual do slider. A
+documentação [Building a carousel using Slider Layout](https://developers.vtex.com/docs/guides/vtex-io-documentation-building-a-carousel-using-slider-layout)
+indica declarar o `slider-layout` no tema como filho de um bloco que fornece a
+lista. Cada item da lista vira um slide. Props de setas, paginação,
+`itemsPerPage` e transição ficam no tema.
+
+**Alterações:**
+
+- `manifest.json`: `vtex.slider-layout` foi substituído por `vtex.list-context`
+  em `0.x`.
+- `store/interfaces.json`: o bloco `instagram-feed` passou a usar
+  `"composition": "children"` e `"allowed": "*"`.
+- `react/defaultApp.tsx`: o `SliderLayout` e o ajuste de
+  `prefers-reduced-motion` da transição foram removidos. Os cards e o card
+  fixo entram em `ListContextProvider`. O filho declarado no tema é renderizado
+  com `{children}`. Título, skeleton, placeholder e estados de falha
+  permaneceram no app.
+- `react/typings/vtex.slider-layout.d.ts` foi removido.
+- `react/typings/vtex.list-context.d.ts` foi criado.
+- `docs/README.md` passou a documentar o `slider-layout` como filho do bloco.
+  Um bloco Embla no lugar do slider precisa ler os slides com `useListContext`.
+
+O CSS dos cards não foi alterado. O skeleton continua usando o handle
+`carousel`. A animação do skeleton ainda respeita `prefers-reduced-motion` pelo
+CSS. A velocidade da transição do slider deixou de ser responsabilidade deste
+app.
+
+Exemplo registrado para o tema, com as props que o app aplicava quando o feed
+vinha completo:
+
+```json
+{
+  "instagram-feed#home": {
+    "props": {
+      "title": "Acompanhe a Sun House no Instagram",
+      "allowDevelopmentFixtures": false
+    },
+    "children": ["slider-layout#instagram-feed"]
+  },
+  "slider-layout#instagram-feed": {
+    "props": {
+      "itemsPerPage": {
+        "desktop": 4,
+        "tablet": 2,
+        "phone": 1.15
+      },
+      "navigationStep": 1,
+      "infinite": true,
+      "showNavigationArrows": "always",
+      "showPaginationDots": "never",
+      "fullWidth": false,
+      "slideTransition": {
+        "speed": 400,
+        "delay": 0,
+        "timing": "ease"
+      }
+    }
+  }
+}
+```
+
+O tema também precisa declarar `vtex.slider-layout` em `0.x`. Sem o filho, o
+bloco mostra o título e os slides ficam sem consumidor.
+
+**Link:** o `vtex link` já estava ativo em `sunhouse/dev1`. O Builder Hub
+aceitou o app depois das alterações. Ao salvar `manifest.json`,
+`store/interfaces.json` e `docs/README.md`, o compilador Node do patch
+incremental voltou a acusar `TS6054` para arquivos que não são TypeScript. Um
+patch posterior de `node/index.ts` e de `react/defaultApp.tsx` concluiu com
+`App updated successfully`. GraphQL do workspace respondeu HTTP 200. Nenhum
+`vtex link` novo foi iniciado pelo agente.
+
+**Validação local:** `tsc --noEmit` do React passou. O ESLint do componente
+terminou sem erros. Permanece o aviso já existente de
+`padding-line-between-statements` em `const feed`.
+
+**Não validado:** o carrossel na vitrine. O slider agora depende do JSON do
+tema, que não está neste repositório. Até essa declaração, a home não exibe os
+posts.
+
+**Status:** ✅ App desvinculado do Slider Layout e aceito no link de `dev1`
+
+---
+
 ## 📁 Principais arquivos criados ou modificados
 
 | Arquivo | Finalidade |
 | --- | --- |
 | `manifest.json` | Builders, dependências, policies e App Settings privadas |
-| `store/interfaces.json` | Registro do bloco `instagram-feed` |
+| `store/interfaces.json` | Bloco `instagram-feed` com `composition: children` |
 | `graphql/schema.graphql` | Contrato público e cache GraphQL |
-| `react/defaultApp.tsx` | Componente, skeleton, estados e carrossel |
+| `react/defaultApp.tsx` | Componente, skeleton, estados e list context |
 | `react/graphql/instagramFeed.gql` | Query com provider do app |
 | `react/styles.css` | Geometria, cards, skeleton e responsividade inicial |
-| `react/typings/vtex.slider-layout.d.ts` | Tipagem do slider utilizado |
+| `react/typings/vtex.list-context.d.ts` | Tipagem de `ListContextProvider` e `useListContext` |
 | `node/index.ts` | Composição do serviço |
 | `node/service.json` | Rota protegida e limites operacionais |
 | `node/routes.ts` | Sincronização manual e respostas sanitizadas |
@@ -555,7 +662,7 @@ Nenhum comando de publicação, deploy ou promoção foi executado.
 | Persistência | VBase + `latest.json` + snapshots imutáveis |
 | Leitura pública | GraphQL cacheável |
 | Sincronização | Manual protegida; automática pendente |
-| Carrossel | `vtex.slider-layout@0.x` |
+| Carrossel | List context no app; `slider-layout` no tema |
 | Testes | 12 passando em 3 suítes |
 | Tema | `sunhouse.sunhouse@1.7.3` |
 | Produção alterada | Não |
@@ -564,6 +671,7 @@ Nenhum comando de publicação, deploy ou promoção foi executado.
 
 ## 📚 Referências
 
+- [Building a carousel using Slider Layout](https://developers.vtex.com/docs/guides/vtex-io-documentation-building-a-carousel-using-slider-layout)
 - [VTEX Slider Layout](https://developers.vtex.com/docs/apps/vtex.slider-layout)
 - [Creating an interface for app settings](https://developers.vtex.com/docs/guides/vtex-io-documentation-creating-an-interface-for-your-app-settings)
 - [GraphQL builder](https://developers.vtex.com/docs/guides/vtex-io-documentation-graphql-builder)

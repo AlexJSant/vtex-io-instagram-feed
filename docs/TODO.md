@@ -9,29 +9,33 @@
 - [x] Executar a sincronização manual real: 8 publicações Meta foram
       normalizadas e persistidas no VBase de desenvolvimento em 21/10/2026.
       Renderização no tema confirmada no mesmo dia.
-- [ ] Revisar os acessos administrativos às App Settings e documentar rotação e
-      revogação. O formato `password` mascara a interface, mas não substitui
-      esses controles. Não copiar o token para frontend, GraphQL, VBase,
-      `vtex.env`, `secrets.revealed.json` ou `secrets.hidden.json`.
+- [x] Revisar os acessos administrativos às App Settings e documentar rotação e
+      revogação. Concluído em 29/10/2026: quem acessa a tela de apps da loja tem
+      autonomia para trocar esses valores, e a VTEX não oferece restrição mais
+      fina. O formato `password` mascara a interface. Não copiar o token para
+      frontend, GraphQL, VBase, `vtex.env`, `secrets.revealed.json` ou
+      `secrets.hidden.json`.
 - [x] Revalidar a leitura real após a publicação do app Meta para o perfil
       `sunhousemoveis`; `/me/media` retornou oito itens em 21/10/2026.
-- [ ] Confirmar acesso avançado/App Review quando aplicável.
+- [x] Confirmar acesso avançado/App Review quando aplicável. Confirmado em
+      29/10/2026.
 - [x] Validar a presença de `CAROUSEL_ALBUM` real e capas de vídeo na resposta.
 - [x] Validar visualmente o carregamento das URLs de mídia no tema.
 - [ ] Definir expiração, renovação, monitoramento e reautorização do token.
-- [ ] Confirmar o ID principal do aplicativo Meta e o vínculo final ao
-      portfólio Sun House. `1209394875373919` é somente o ID específico do app
-      Instagram.
+- [x] Confirmar o ID principal do aplicativo Meta e o vínculo final ao
+      portfólio Sun House, em 29/10/2026. `1209394875373919` é somente o ID
+      específico do app Instagram.
 - [x] Implementar entrada dedicada ao Google Cloud Scheduler, sem identidade
       VTEX, autenticada no middleware por `schedulerSyncSecret` privado e sem
       aceitar fixtures.
-- [ ] Cadastrar um `schedulerSyncSecret` de pelo menos 32 bytes aleatórios nas
-      App Settings de cada instalação e no header protegido do job. Definir
-      acesso IAM, rotação, revogação e auditoria sem reutilizar o token Meta.
-- [ ] Após publicar, configurar o Google Cloud Scheduler para chamar a rota de
-      produção por POST, sem OIDC/OAuth, com corpo vazio. Definir agenda e fuso,
-      timeout, retry progressivo, monitoramento e alerta depois de medir a
-      duração real. A rota manual deve permanecer para bootstrap e recuperação.
+- [x] Cadastrar um `schedulerSyncSecret` de pelo menos 32 bytes aleatórios nas
+      App Settings de cada instalação e no header protegido do job. Acesso IAM,
+      rotação, revogação e auditoria definidos em 29/10/2026, sem reutilizar o
+      token Meta.
+- [x] Rota de produção do Google Cloud Scheduler, definida em 29/10/2026: POST
+      `https://sunhouse.myvtex.com/_v/sunhouse/instagram-feed/sync-scheduler`,
+      sem OIDC/OAuth e com corpo vazio. Esse host é o workspace `master`. A
+      rota manual permanece para bootstrap e recuperação.
 - [ ] Revisar a separação de persistência por ambiente. Atualmente
       `workspace === "master"` seleciona `production/` e qualquer outro nome,
       inclusive um workspace VTEX do tipo production, seleciona `development/`.
@@ -72,8 +76,18 @@
 - [ ] Decidir o prazo máximo de dados antigos. A proposta de 48 horas ainda não
       está aplicada; enquanto isso, a última sincronização válida continua
       disponível.
-- [ ] Refinar recorte, espaçamentos e validação visual em desktop, tablet e
-      mobile no tema real.
+- [x] Refinar recorte, espaçamentos e validação visual em desktop, tablet e
+      mobile no tema real. Concluído em 29/10/2026.
 - [ ] Medir rede, LCP e CLS antes/depois em condições equivalentes. Skeleton não
       é evidência automática de melhoria.
-- [ ] Evoluções futuras, fora do MVP: CTA, legenda e modal.
+- [ ] Evoluções futuras, fora do MVP: CTA e legenda.
+- [ ] Evolução futura, fora do MVP: ao clicar na imagem, abrir o post em um modal
+      com iframe, mantendo o botão "ver no instagram" em aba nova. Não alterar
+      o comportamento atual até validar em loja. O permalink exato (`/p/` e
+      `/reel/`) não pode ser encaixado: o Instagram bloqueia framing por
+      `frame-ancestors`. Usar a URL oficial de embed (`/embed/` ou
+      `/embed/captioned/`) dentro de um único `vtex.modal-layout`, irmão da
+      lista e fora dos slides, com o iframe montado só enquanto o modal estiver
+      aberto. O card do perfil (`sunhousemoveis`) continua só como aba nova.
+      Validar reel indisponível, `frame-src` da loja, rolagem no iOS, foco ao
+      fechar e consentimento de cookie da Meta antes de implementar.

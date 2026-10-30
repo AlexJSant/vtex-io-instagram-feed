@@ -31,11 +31,44 @@
   display: block;
   margin: 0 0.35rem;
   overflow: hidden;
+  position: relative;
 }
 
-.card:focus-visible {
+.card:has(:focus-visible) {
   outline: 3px solid currentColor;
   outline-offset: 3px;
+}
+
+.cardLink {
+  display: block;
+  inset: 0;
+  /* position: absolute; */
+}
+
+.cardOverlay {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.card:focus-within .cardOverlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fixedCardText {
+  margin: 0;
+}
+
+.fixedCardIcon {
+  display: block;
+  flex: none;
+  margin-left: 0.4rem;
 }
 
 .image {
@@ -68,6 +101,7 @@
 }
 
 @keyframes instagram-feed-pulse {
+
   0%,
   100% {
     opacity: 0.55;
@@ -75,6 +109,13 @@
 
   50% {
     opacity: 1;
+  }
+}
+
+@media (hover: hover) {
+  .card:hover .cardOverlay {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 

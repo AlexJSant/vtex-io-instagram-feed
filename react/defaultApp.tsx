@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useQuery } from 'react-apollo'
 import { useCssHandles } from 'vtex.css-handles'
-import SliderLayout from 'vtex.slider-layout/SliderLayout'
+import { ListContextProvider, useListContext } from 'vtex.list-context'
 
 import INSTAGRAM_FEED_QUERY from './graphql/instagramFeed.gql'
 import styles from './styles.css'
@@ -30,6 +30,7 @@ interface InstagramFeedQueryData {
 interface Props {
   title?: string
   allowDevelopmentFixtures?: boolean
+  children?: React.ReactNode
 }
 
 const CSS_HANDLES = [
@@ -38,7 +39,14 @@ const CSS_HANDLES = [
   'title',
   'carousel',
   'card',
+  'cardLink',
+  'cardOverlay',
+  'cardOverlayButton',
   'image',
+  'fixedCard',
+  'fixedCardText',
+  'fixedCardButton',
+  'fixedCardIcon',
   'skeleton',
   'skeletonCard',
   'placeholder',
@@ -46,26 +54,75 @@ const CSS_HANDLES = [
 ] as const
 
 const DEFAULT_TITLE = 'Acompanhe a Sun House no Instagram'
+const FIXED_POST_URL = 'https://www.instagram.com/sunhousemoveis/'
 const SKELETON_ITEMS = [0, 1, 2, 3]
 
-function useReducedMotion() {
-  const [reducedMotion, setReducedMotion] = useState(false)
+const VTEX_BUTTON_CLASSES = [
+  'vtex-button',
+  'bw1',
+  'ba',
+  'fw5',
+  'v-mid',
+  'relative',
+  'pa0',
+  'lh-solid',
+  'br2',
+  'min-h-regular',
+  't-action',
+  'bg-action-primary',
+  'b--action-primary',
+  'c-on-action-primary',
+  'hover-bg-action-primary',
+  'hover-b--action-primary',
+  'hover-c-on-action-primary',
+  'pointer',
+  'inline-flex',
+  'items-center',
+  'no-underline',
+].join(' ')
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const updatePreference = () => setReducedMotion(mediaQuery.matches)
+const VTEX_BUTTON_LABEL_CLASSES =
+  'vtex-button__label flex items-center justify-center h-100 ph6'
 
-    updatePreference()
-    mediaQuery.addListener(updatePreference)
+function VtexLinkButton({
+  className,
+  href,
+  children,
+}: {
+  className: string
+  href: string
+  children: React.ReactNode
+}) {
+  return (
+    <a
+      className={`${VTEX_BUTTON_CLASSES} ${className}`}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <div className={VTEX_BUTTON_LABEL_CLASSES}>{children}</div>
+    </a>
+  )
+}
 
-    return () => mediaQuery.removeListener(updatePreference)
-  }, [])
-
-  return reducedMotion
+function ExternalTabIcon({ className }: { className: string }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M9.5 2a.75.75 0 0 0 0 1.5h1.69L6.22 8.47a.75.75 0 1 0 1.06 1.06l4.97-4.97V6.5a.75.75 0 0 0 1.5 0v-4a.75.75 0 0 0-.75-.75h-4z" />
+      <path d="M4.25 3.5A1.75 1.75 0 0 0 2.5 5.25v6.5c0 .966.784 1.75 1.75 1.75h6.5a1.75 1.75 0 0 0 1.75-1.75V9a.75.75 0 0 0-1.5 0v2.75a.25.25 0 0 1-.25.25h-6.5a.25.25 0 0 1-.25-.25v-6.5a.25.25 0 0 1 .25-.25H7a.75.75 0 0 0 0-1.5H4.25z" />
+    </svg>
+  )
 }
 
 function FeedSkeleton({ title }: { title: string }) {
-  const handles = useCssHandles(CSS_HANDLES)
+  const { handles } = useCssHandles(CSS_HANDLES)
 
   return (
     <section
@@ -92,9 +149,10 @@ function FeedSkeleton({ title }: { title: string }) {
 function InstagramFeed({
   title = DEFAULT_TITLE,
   allowDevelopmentFixtures = false,
+  children,
 }: Props) {
-  const handles = useCssHandles(CSS_HANDLES)
-  const reducedMotion = useReducedMotion()
+  const { handles } = useCssHandles(CSS_HANDLES)
+  const parentList = useListContext()?.list ?? []
   const [invalidItems, setInvalidItems] = useState<string[]>([])
   const { data, error, loading } = useQuery<InstagramFeedQueryData>(
     INSTAGRAM_FEED_QUERY,
@@ -134,7 +192,54 @@ function InstagramFeed({
     )
   }
 
-  const isScrollable = items.length > 4
+  const feedSlides = [
+    ...items.map((item) => (
+      <div className={`${handles.card} ${styles.card}`} key={item.id}>
+        <a
+          className={`${handles.cardLink} ${styles.cardLink}`}
+          href={item.permalink}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${item.altText} (abre em uma nova aba)`}
+        >
+          <img
+            className={`${handles.image} ${styles.image}`}
+            src={item.coverUrl}
+            alt={item.altText}
+            loading="lazy"
+            decoding="async"
+            onError={() =>
+              setInvalidItems((current) =>
+                current.includes(item.id) ? current : [...current, item.id]
+              )
+            }
+          />
+        </a>
+        <div className={`${handles.cardOverlay} ${styles.cardOverlay}`}>
+          <VtexLinkButton
+            className={handles.cardOverlayButton}
+            href={item.permalink}
+          >
+            ver no instagram
+          </VtexLinkButton>
+        </div>
+      </div>
+    )),
+    <div
+      className={`${handles.fixedCard} ${handles.card} ${styles.card}`}
+      key="fixed-post"
+    >
+      <p className={`${handles.fixedCardText} ${styles.fixedCardText}`}>
+        Veja mais diretamente no Instagram
+      </p>
+      <VtexLinkButton className={handles.fixedCardButton} href={FIXED_POST_URL}>
+        Ver mais
+        <ExternalTabIcon
+          className={`${handles.fixedCardIcon} ${styles.fixedCardIcon}`}
+        />
+      </VtexLinkButton>
+    </div>,
+  ]
 
   return (
     <section
@@ -151,49 +256,9 @@ function InstagramFeed({
           </span>
         )}
       </div>
-      <SliderLayout
-        label="Publicações da Sun House no Instagram"
-        itemsPerPage={{
-          desktop: Math.min(4, items.length),
-          tablet: Math.min(2, items.length),
-          phone: items.length > 1 ? 1.15 : 1,
-        }}
-        navigationStep={1}
-        infinite={isScrollable}
-        showNavigationArrows={isScrollable ? 'always' : 'never'}
-        showPaginationDots="never"
-        autoplay={undefined}
-        fullWidth={false}
-        slideTransition={{
-          speed: reducedMotion ? 0 : 400,
-          delay: 0,
-          timing: 'ease',
-        }}
-      >
-        {items.map((item) => (
-          <a
-            className={`${handles.card} ${styles.card}`}
-            href={item.permalink}
-            key={item.id}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${item.altText} (abre em uma nova aba)`}
-          >
-            <img
-              className={`${handles.image} ${styles.image}`}
-              src={item.coverUrl}
-              alt={item.altText}
-              loading="lazy"
-              decoding="async"
-              onError={() =>
-                setInvalidItems((current) =>
-                  current.includes(item.id) ? current : [...current, item.id]
-                )
-              }
-            />
-          </a>
-        ))}
-      </SliderLayout>
+      <ListContextProvider list={parentList.concat(feedSlides)}>
+        {children}
+      </ListContextProvider>
     </section>
   )
 }
