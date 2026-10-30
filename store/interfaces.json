@@ -1,5 +1,7 @@
 {
   "instagram-feed": {
-    "component": "defaultApp"
+    "component": "defaultApp",
+    "composition": "children",
+    "allowed": "*"
   }
 }

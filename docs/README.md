@@ -8,19 +8,20 @@
 
 📢 Use this project, [contribute](https://github.com/AlexJSant/vtex-io-instagram-feed) to it or open issues to help evolve it using [Store Discussion](https://github.com/vtex-apps/store-discussion).
 
-VTEX IO / Store Framework app that reads a persisted Instagram snapshot and renders up to eight posts in the official `vtex.slider-layout` carousel.
+VTEX IO / Store Framework app that reads a persisted Instagram snapshot and exposes up to eight posts plus a fixed closing card through a list context. The store theme renders that list with `slider-layout` or another child block.
 
 ## Configuration
 
 This repository does not contain the store theme. To render the feed:
 
-1. Add the app as a theme dependency in the theme `manifest.json`.
-2. Declare the `instagram-feed` block in a theme template, or inside another block from the theme. The example below targets the second fold of the home page.
+1. Add the app and `vtex.slider-layout` as theme dependencies in the theme `manifest.json`.
+2. Declare `instagram-feed` with `slider-layout` as its child. The feed provides the slides through [list context](https://developers.vtex.com/docs/guides/vtex-io-documentation-building-a-carousel-using-slider-layout). Slider props stay in the theme. The example below targets the second fold of the home page.
 
 ```json
 {
   "dependencies": {
-    "{{vendor}}.instagram-feed": "0.x"
+    "{{vendor}}.instagram-feed": "0.x",
+    "vtex.slider-layout": "0.x"
   }
 }
 ```
@@ -31,14 +32,36 @@ This repository does not contain the store theme. To render the feed:
     "props": {
       "title": "Acompanhe o nosso Instagram",
       "allowDevelopmentFixtures": false
+    },
+    "children": ["slider-layout#instagram-feed"]
+  },
+  "slider-layout#instagram-feed": {
+    "props": {
+      "itemsPerPage": {
+        "desktop": 4,
+        "tablet": 2,
+        "phone": 1.15
+      },
+      "navigationStep": 1,
+      "infinite": true,
+      "showNavigationArrows": "always",
+      "showPaginationDots": "never",
+      "fullWidth": false,
+      "slideTransition": {
+        "speed": 400,
+        "delay": 0,
+        "timing": "ease"
+      }
     }
   }
 }
 ```
 
+A custom child, such as an Embla carousel block, can replace `slider-layout`. That block must read the slides with `useListContext` from `vtex.list-context`.
+
 | Block name         | Description                                                                                                      |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `instagram-feed`   | Renders up to eight posts from the latest valid Instagram snapshot in a `vtex.slider-layout` carousel.         |
+| `instagram-feed`   | Provides up to eight posts from the latest valid Instagram snapshot, appends a fixed card, and passes the slides to its child block. |
 
 ### `instagram-feed` props
 
@@ -158,6 +181,8 @@ See [TODO.md](TODO.md) for the decisions that are mandatory before production. T
 
 ### VTEX references
 
+- [Building a carousel using Slider Layout](https://developers.vtex.com/docs/guides/vtex-io-documentation-building-a-carousel-using-slider-layout)
+- [Slider Layout](https://developers.vtex.com/docs/apps/vtex.slider-layout)
 - [Creating an interface for your app settings](https://developers.vtex.com/docs/guides/vtex-io-documentation-creating-an-interface-for-your-app-settings)
 - [GraphQL builder](https://developers.vtex.com/docs/guides/vtex-io-documentation-graphql-builder)
 - [GraphQL authorization in IO apps](https://developers.vtex.com/docs/guides/graphql-authorization-in-io-apps)
@@ -172,18 +197,29 @@ See [TODO.md](TODO.md) for the decisions that are mandatory before production. T
 
 In order to apply CSS customizations in this and other blocks, follow the instructions given in the recipe on [Using CSS Handles for store customization](https://vtex.io/docs/recipes/style/using-css-handles-for-store-customization).
 
-| CSS Handles          |
-| -------------------- |
-| `card`               |
-| `carousel`           |
-| `container`          |
-| `developmentNotice`  |
-| `heading`            |
-| `image`              |
-| `placeholder`        |
-| `skeleton`           |
-| `skeletonCard`       |
-| `title`              |
+In the store theme, create `styles/css/sunhouse.instagram-feed.css` and target classes with the `sunhouse-instagram-feed-0-x-` prefix. The block also accepts `blockClass` (for example `container--home`).
+
+| CSS Handles          | Where it appears |
+| -------------------- | ---------------- |
+| `container`          | Root `<section>` (also during loading) |
+| `heading`            | Title wrapper |
+| `title`              | `<h2>` |
+| `carousel`           | Skeleton only; the live feed is rendered by the child (`slider-layout` or equivalent) |
+| `card`               | Wrapper of each post slide |
+| `cardLink`           | Permalink `<a>` wrapping the image |
+| `cardOverlay`        | Hover/focus overlay on each post |
+| `cardOverlayButton`  | “ver no instagram” button inside the overlay |
+| `image`              | Post `<img>` |
+| `fixedCard`          | Closing slide that links to the Instagram profile |
+| `fixedCardText`      | Copy inside the fixed card |
+| `fixedCardButton`    | “Ver mais” button on the fixed card |
+| `fixedCardIcon`      | External-tab icon next to that button |
+| `skeleton`           | Modifier on the container while loading |
+| `skeletonCard`       | Gray placeholder cards during loading |
+| `placeholder`        | Empty node on error or empty feed (`data-feed-state`) |
+| `developmentNotice`  | “Dados de demonstração” notice when fixtures are shown |
+
+Slider arrows, track, and slides belong to `vtex.slider-layout`. Style them in the theme’s `styles/css/vtex.slider-layout.css`, scoped with `blockClass` or a descendant selector of this block’s `container` so other store sliders are not affected.
 
 <!-- DOCS-IGNORE:start -->
 

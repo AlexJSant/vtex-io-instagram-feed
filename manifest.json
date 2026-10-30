@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "vtex.css-handles": "1.x",
-    "vtex.slider-layout": "0.x"
+    "vtex.list-context": "0.x"
   },
   "registries": [
     "smartcheckout"
