@@ -1,7 +1,7 @@
 {
   "vendor": "sunhouse",
   "name": "instagram-feed",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "title": "Instagram Feed App",
   "description": "Integration with the Instagram Feed via Meta's API for VTEX IO stores.",
   "builders": {
